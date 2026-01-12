@@ -1,0 +1,29 @@
+{
+  "name": "formsink",
+  "version": "1.0.0",
+  "description": "Simple, reusable form submission backend",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": [
+    "forms",
+    "backend",
+    "email",
+    "submissions"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.6.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "nodemailer": "^7.0.12",
+    "uuid": "^13.0.0"
+  }
+}

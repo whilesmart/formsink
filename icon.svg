@@ -1,0 +1,19 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document/Form shape -->
+  <rect x="6" y="4" width="18" height="24" rx="2" fill="#4a6fa5"/>
+  <!-- Form lines -->
+  <line x1="10" y1="10" x2="20" y2="10" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="16" x2="18" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="10" y1="22" x2="16" y2="22" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Funnel/Sink -->
+  <path d="M26 8 L42 8 L38 22 L30 22 Z" fill="#1a1a2e" stroke="#4a6fa5" stroke-width="2"/>
+  <!-- Pipe -->
+  <rect x="32" y="22" width="4" height="16" fill="#1a1a2e" stroke="#4a6fa5" stroke-width="2"/>
+  <!-- Drop -->
+  <ellipse cx="34" cy="44" rx="4" ry="3" fill="#4a6fa5"/>
+
+  <!-- Arrow -->
+  <path d="M22 14 L26 14" stroke="#e8e8e8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 11 L27 14 L24 17" stroke="#e8e8e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
