@@ -21,14 +21,14 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3001/admin` and login with password `admin` (default).
+Open `http://localhost:3000/admin` and login with password `admin` (default).
 
 ## Configuration
 
 Copy `.env.example` to `.env` and configure:
 
 ```env
-PORT=3001
+PORT=3000
 
 # Admin login password
 ADMIN_PASSWORD=your-secure-password
@@ -51,7 +51,7 @@ SMTP_FROM=noreply@example.com
 Login to the admin UI at `/admin` and click "New Form", or use the API:
 
 ```bash
-curl -X POST http://localhost:3001/api/forms \
+curl -X POST http://localhost:3000/api/forms \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
   -d '{
