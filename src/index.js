@@ -11,7 +11,7 @@ import { forms, submissions } from './db.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 
@@ -116,37 +116,97 @@ app.get('/admin/login', (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - FormSink</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#0b0f1a',
+            panel: '#121826',
+            panelStrong: '#0f1624',
+            line: '#1f2a44',
+            accent: '#f97316',
+            accentSoft: '#fdba74',
+            success: '#22c55e',
+            danger: '#f43f5e'
+          },
+          fontFamily: {
+            sans: ['Space Grotesk', 'ui-sans-serif', 'system-ui'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular']
+          },
+          boxShadow: {
+            soft: '0 12px 30px rgba(2, 6, 23, 0.45)'
+          },
+          keyframes: {
+            floatIn: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } }
+          },
+          animation: {
+            'float-in': 'floatIn 240ms ease-out',
+            'fade-in': 'fadeIn 200ms ease-out'
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .login-card { background: #16213e; padding: 32px; border-radius: 4px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); width: 100%; max-width: 380px; border: 1px solid #1f3460; }
-    .login-card h1 { font-size: 22px; margin-bottom: 6px; color: #e8e8e8; font-weight: 600; }
-    .login-card p { color: #8892a6; margin-bottom: 28px; font-size: 14px; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-group input { width: 100%; padding: 12px 14px; border: 1px solid #2d3a5c; border-radius: 3px; font-size: 14px; background: #0f1629; color: #e8e8e8; transition: all 0.2s; }
-    .form-group input:focus { outline: none; border-color: #4a6fa5; background: #131b2e; }
-    .form-group input::placeholder { color: #4a5568; }
-    .btn { width: 100%; padding: 12px; background: #4a6fa5; color: #fff; border: none; border-radius: 3px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-    .btn:hover { background: #5a7fb5; }
-    .btn:disabled { background: #2d3a5c; color: #6b7280; cursor: not-allowed; }
-    .error { background: rgba(220, 53, 69, 0.15); color: #f87171; padding: 12px; border-radius: 3px; margin-bottom: 20px; font-size: 13px; border: 1px solid rgba(220, 53, 69, 0.3); }
+    body {
+      background:
+        radial-gradient(900px 520px at 12% -8%, rgba(249, 115, 22, 0.22), transparent 60%),
+        radial-gradient(700px 420px at 110% 10%, rgba(34, 197, 94, 0.18), transparent 60%),
+        #0b0f1a;
+    }
+    .fade-enter-active, .fade-leave-active { transition: opacity 200ms ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
   </style>
 </head>
-<body>
-  <div id="app">
-    <div class="login-card">
-      <h1>FormSink</h1>
-      <p>Sign in to manage your forms</p>
-      <div v-if="error" class="error">{{ error }}</div>
-      <form @submit.prevent="login">
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" v-model="password" placeholder="Enter password" required autofocus>
+<body class="min-h-screen font-sans text-slate-100">
+  <div id="app" class="min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-md border border-line/80 bg-panel/95 p-8 shadow-soft animate-float-in">
+      <div class="flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center bg-accent/15 text-accent font-semibold">FS</div>
+        <div>
+          <div class="text-xs uppercase tracking-[0.3em] text-slate-400">FormSink</div>
+          <h1 class="text-xl font-semibold text-slate-100">Admin Console</h1>
         </div>
-        <button type="submit" class="btn" :disabled="loading">{{ loading ? 'Signing in...' : 'Sign In' }}</button>
+      </div>
+      <p class="mt-4 text-sm text-slate-400">Sign in to manage forms, review submissions, and update webhooks.</p>
+      <transition name="fade">
+        <div v-if="error" class="mt-6 border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-rose-200">
+          {{ error }}
+        </div>
+      </transition>
+      <form @submit.prevent="login" class="mt-6 space-y-5">
+        <div>
+          <label for="password" class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Password</label>
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            placeholder="Enter password"
+            required
+            autofocus
+            class="mt-2 w-full border border-line bg-slate-800 px-4 py-3 text-sm text-white placeholder-slate-500 caret-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
+          >
+        </div>
+        <button
+          type="submit"
+          class="inline-flex w-full items-center justify-center gap-2 bg-accent px-4 py-3 text-sm font-semibold text-ink shadow-soft transition hover:bg-accentSoft disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="loading"
+        >
+          <span v-if="loading" class="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-ink/60 border-t-transparent"></span>
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
       </form>
+      <div class="mt-6 flex items-center justify-between text-xs text-slate-500">
+        <span>Secure session 24h</span>
+        <span class="font-mono">POST /admin/login</span>
+      </div>
     </div>
   </div>
   <script>
@@ -209,112 +269,78 @@ app.get('/admin', requireAuth, (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FormSink Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#0b0f1a',
+            panel: '#121826',
+            panelStrong: '#0f1624',
+            line: '#1f2a44',
+            accent: '#f97316',
+            accentSoft: '#fdba74',
+            success: '#22c55e',
+            danger: '#f43f5e'
+          },
+          fontFamily: {
+            sans: ['Space Grotesk', 'ui-sans-serif', 'system-ui'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular']
+          },
+          boxShadow: {
+            soft: '0 12px 30px rgba(2, 6, 23, 0.45)'
+          },
+          keyframes: {
+            floatIn: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } }
+          },
+          animation: {
+            'float-in': 'floatIn 240ms ease-out',
+            'fade-in': 'fadeIn 200ms ease-out'
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1629; min-height: 100vh; color: #e8e8e8; }
-
-    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #1a1a2e; border-right: 1px solid #2d3a5c; padding: 20px 0; }
-    .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid #2d3a5c; margin-bottom: 20px; }
-    .sidebar-header h1 { font-size: 18px; font-weight: 600; color: #e8e8e8; }
-    .sidebar-nav { padding: 0 12px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 3px; color: #8892a6; font-size: 14px; cursor: pointer; transition: all 0.15s; margin-bottom: 4px; }
-    .nav-item:hover { background: #16213e; color: #e8e8e8; }
-    .nav-item.active { background: #4a6fa5; color: #fff; }
-    .sidebar-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px 12px; border-top: 1px solid #2d3a5c; }
-
-    .main { margin-left: 220px; padding: 24px 32px; min-height: 100vh; }
-
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #2d3a5c; }
-    .page-header h2 { font-size: 20px; font-weight: 600; color: #e8e8e8; }
-
-    .stats-row { display: flex; gap: 16px; margin-bottom: 28px; }
-    .stat-card { background: #16213e; padding: 20px; border-radius: 4px; border: 1px solid #2d3a5c; flex: 1; }
-    .stat-card .label { font-size: 12px; color: #8892a6; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card .value { font-size: 32px; font-weight: 600; color: #e8e8e8; }
-
-    .table-container { background: #16213e; border-radius: 4px; border: 1px solid #2d3a5c; overflow: hidden; }
-    .table-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #2d3a5c; }
-    .table-header h3 { font-size: 14px; font-weight: 600; color: #e8e8e8; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 14px 20px; border-bottom: 1px solid #2d3a5c; }
-    th { font-size: 11px; font-weight: 600; color: #8892a6; text-transform: uppercase; letter-spacing: 0.5px; background: #131b2e; }
-    td { font-size: 14px; color: #c9d1d9; }
-    tr:hover td { background: #1a2744; }
-    tr:last-child td { border-bottom: none; }
-
-    .slug-badge { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 12px; color: #8892a6; background: #0f1629; padding: 4px 8px; border-radius: 2px; }
-    .endpoint-badge { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 11px; color: #4a6fa5; }
-    .count-badge { font-size: 13px; color: #8892a6; }
-
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 3px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
-    .btn-primary { background: #4a6fa5; color: #fff; }
-    .btn-primary:hover { background: #5a7fb5; }
-    .btn-secondary { background: #2d3a5c; color: #c9d1d9; }
-    .btn-secondary:hover { background: #3d4a6c; }
-    .btn-ghost { background: transparent; color: #8892a6; padding: 6px 10px; }
-    .btn-ghost:hover { color: #e8e8e8; background: #2d3a5c; }
-    .btn-danger { background: transparent; color: #f87171; }
-    .btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
-    .btn-sm { padding: 6px 10px; font-size: 12px; }
-
-    .actions { display: flex; gap: 4px; }
-
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .modal { background: #16213e; border-radius: 4px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; border: 1px solid #2d3a5c; }
-    .modal-header { padding: 20px; border-bottom: 1px solid #2d3a5c; display: flex; justify-content: space-between; align-items: center; }
-    .modal-header h2 { font-size: 16px; font-weight: 600; color: #e8e8e8; }
-    .modal-body { padding: 20px; }
-    .modal-footer { padding: 16px 20px; border-top: 1px solid #2d3a5c; display: flex; justify-content: flex-end; gap: 10px; }
-
-    .form-group { margin-bottom: 18px; }
-    .form-group:last-child { margin-bottom: 0; }
-    .form-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 6px; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #2d3a5c; border-radius: 3px; font-size: 14px; background: #0f1629; color: #e8e8e8; transition: all 0.15s; }
-    .form-group input:focus { outline: none; border-color: #4a6fa5; }
-    .form-group input:disabled { background: #1a1a2e; color: #6b7280; cursor: not-allowed; }
-    .form-group .hint { font-size: 11px; color: #6b7280; margin-top: 6px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-    .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280; padding: 0; line-height: 1; }
-    .close-btn:hover { color: #e8e8e8; }
-
-    .empty-state { text-align: center; padding: 48px 24px; color: #6b7280; }
-    .empty-state p { margin-bottom: 16px; }
-
-    .alert { padding: 12px 16px; border-radius: 3px; margin-bottom: 20px; font-size: 13px; }
-    .alert-success { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-    .alert-error { background: rgba(220, 53, 69, 0.15); color: #f87171; border: 1px solid rgba(220, 53, 69, 0.3); }
-
-    .data-json { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 11px; background: #0f1629; padding: 10px; border-radius: 3px; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; color: #a0aec0; border: 1px solid #2d3a5c; }
-
-    .submissions-modal { max-width: 720px; }
-    .submissions-empty { padding: 40px; text-align: center; color: #6b7280; }
-
-    @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; padding: 16px; }
-      .form-row { grid-template-columns: 1fr; }
-      .stats-row { flex-direction: column; }
+    body {
+      background:
+        radial-gradient(1100px 620px at 8% -10%, rgba(249, 115, 22, 0.22), transparent 60%),
+        radial-gradient(900px 520px at 108% 12%, rgba(34, 197, 94, 0.18), transparent 60%),
+        #0b0f1a;
     }
+    .fade-enter-active, .fade-leave-active { transition: opacity 200ms ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+
   </style>
 </head>
-<body>
-  <div id="app">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <h1>FormSink</h1>
+<body class="min-h-screen font-sans text-slate-100">
+  <div id="app" class="min-h-screen">
+    <aside class="hidden lg:flex lg:fixed lg:inset-y-0 lg:w-60 lg:flex-col lg:border-r lg:border-line/80 lg:bg-panel/95">
+      <div class="flex items-center gap-3 px-6 py-6">
+        <div class="flex h-11 w-11 items-center justify-center bg-accent/15 text-accent font-semibold">FS</div>
+        <div>
+          <div class="text-xs uppercase tracking-[0.3em] text-slate-400">FormSink</div>
+          <div class="text-lg font-semibold">Admin Console</div>
+        </div>
       </div>
-      <nav class="sidebar-nav">
-        <div class="nav-item active">
+      <nav class="px-4">
+        <div class="flex items-center gap-3 bg-accent/15 px-4 py-3 text-sm font-semibold text-accent">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Forms
         </div>
+        <div class="mt-4 border border-line/60 bg-panelStrong/70 px-4 py-4 text-xs text-slate-400">
+          Manage endpoints and alert routing. All changes apply immediately.
+        </div>
       </nav>
-      <div class="sidebar-footer">
+      <div class="mt-auto px-4 py-6">
         <form action="/admin/logout" method="POST">
-          <button type="submit" class="btn btn-ghost" style="width:100%;justify-content:center">
+          <button type="submit" class="inline-flex w-full items-center justify-center gap-2 border border-line/80 bg-panelStrong/80 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Logout
           </button>
@@ -322,112 +348,136 @@ app.get('/admin', requireAuth, (req, res) => {
       </div>
     </aside>
 
-    <main class="main">
+    <main class="px-4 py-6 sm:px-6 lg:ml-60 lg:px-8">
+      <div class="mb-8 flex flex-col gap-4 lg:hidden">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center bg-accent/15 text-accent font-semibold">FS</div>
+            <div>
+              <div class="text-xs uppercase tracking-[0.3em] text-slate-400">FormSink</div>
+              <div class="text-lg font-semibold">Admin Console</div>
+            </div>
+          </div>
+          <form action="/admin/logout" method="POST">
+            <button type="submit" class="inline-flex items-center gap-2 border border-line/80 bg-panelStrong/80 px-3 py-2 text-xs font-semibold text-slate-200">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Logout
+            </button>
+          </form>
+        </div>
+      </div>
+
       <transition name="fade">
-        <div v-if="alert.message" :class="['alert', 'alert-' + alert.type]">{{ alert.message }}</div>
+        <div v-if="alert.message" :class="['mb-5 border px-4 py-3 text-sm animate-fade-in', alert.type === 'success' ? 'border-success/50 bg-success/10 text-emerald-200' : 'border-danger/50 bg-danger/10 text-rose-200']">
+          {{ alert.message }}
+        </div>
       </transition>
 
-      <div class="page-header">
-        <h2>Dashboard</h2>
-        <button class="btn btn-primary" @click="openModal()">
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <h2 class="text-xl font-semibold">Forms</h2>
+        <div class="flex items-center gap-2">
+          <span class="border border-line/70 bg-panelStrong/70 px-2.5 py-1 text-xs"><span class="font-semibold text-slate-100">{{ forms.length }}</span> <span class="text-slate-400">forms</span></span>
+          <span class="border border-line/70 bg-panelStrong/70 px-2.5 py-1 text-xs"><span class="font-semibold text-slate-100">{{ totalSubmissions }}</span> <span class="text-slate-400">submissions</span></span>
+        </div>
+        <button class="ml-auto inline-flex items-center gap-2 bg-accent px-3.5 py-2 text-sm font-semibold text-ink shadow-soft transition hover:bg-accentSoft" @click="openModal()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Form
         </button>
       </div>
 
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="label">Total Forms</div>
-          <div class="value">{{ forms.length }}</div>
+      <div class="mt-4 border border-line/70 bg-panel/90 shadow-soft">
+        <div v-if="forms.length === 0" class="px-6 py-14 text-center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-slate-600"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <p class="mt-3 text-sm text-slate-400">No forms yet. Create your first form to start collecting submissions.</p>
+          <button class="mt-4 inline-flex items-center gap-2 bg-accent px-4 py-2.5 text-sm font-semibold text-ink shadow-soft transition hover:bg-accentSoft" @click="openModal()">Create Form</button>
         </div>
-        <div class="stat-card">
-          <div class="label">Total Submissions</div>
-          <div class="value">{{ totalSubmissions }}</div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-panelStrong/70 text-xs uppercase tracking-[0.3em] text-slate-400">
+              <tr>
+                <th class="px-5 py-3 font-semibold">Name</th>
+                <th class="px-5 py-3 font-semibold">Slug</th>
+                <th class="px-5 py-3 font-semibold">Submissions</th>
+                <th class="px-5 py-3 font-semibold">Endpoint</th>
+                <th class="px-5 py-3 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="form in forms" :key="form.slug" class="border-b border-line/60 hover:bg-panelStrong/60 transition">
+                <td class="px-5 py-4 font-semibold text-slate-100">{{ form.name }}</td>
+                <td class="px-5 py-4">
+                  <span class="inline-flex items-center border border-line/70 bg-panelStrong/70 px-2 py-1 font-mono text-xs text-slate-300">{{ form.slug }}</span>
+                </td>
+                <td class="px-5 py-4 text-slate-300">{{ form.submissionCount }}</td>
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-xs text-accent">POST /api/f/{{ form.slug }}</span>
+                    <button class="inline-flex h-6 w-6 items-center justify-center text-slate-500 transition hover:bg-panelStrong hover:text-white" @click="copyEndpoint(form.slug)" title="Copy endpoint URL">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    </button>
+                  </div>
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex justify-end gap-2">
+                    <button class="inline-flex h-9 w-9 items-center justify-center border border-line/70 bg-panelStrong/70 text-slate-200 transition hover:border-accent/60 hover:text-white" @click="viewSubmissions(form)" title="View submissions">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button class="inline-flex h-9 w-9 items-center justify-center border border-line/70 bg-panelStrong/70 text-slate-200 transition hover:border-accent/60 hover:text-white" @click="openModal(form)" title="Edit">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="inline-flex h-9 w-9 items-center justify-center border border-danger/40 bg-danger/10 text-rose-200 transition hover:border-danger hover:text-white" @click="deleteForm(form)" title="Delete">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      <div class="table-container">
-        <div class="table-header">
-          <h3>All Forms</h3>
-        </div>
-        <div v-if="forms.length === 0" class="empty-state">
-          <p>No forms yet. Create your first form to start collecting submissions.</p>
-          <button class="btn btn-primary" @click="openModal()">Create Form</button>
-        </div>
-        <table v-else>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Slug</th>
-              <th>Submissions</th>
-              <th>Endpoint</th>
-              <th style="width:140px">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="form in forms" :key="form.slug">
-              <td><strong>{{ form.name }}</strong></td>
-              <td><span class="slug-badge">{{ form.slug }}</span></td>
-              <td><span class="count-badge">{{ form.submissionCount }}</span></td>
-              <td><span class="endpoint-badge">POST /api/f/{{ form.slug }}</span></td>
-              <td>
-                <div class="actions">
-                  <button class="btn btn-ghost btn-sm" @click="viewSubmissions(form)" title="View submissions">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  </button>
-                  <button class="btn btn-ghost btn-sm" @click="openModal(form)" title="Edit">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button class="btn btn-danger btn-sm" @click="deleteForm(form)" title="Delete">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </main>
 
     <teleport to="body">
-      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>{{ editingForm ? 'Edit Form' : 'New Form' }}</h2>
-            <button class="close-btn" @click="closeModal">&times;</button>
+      <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" @click.self="closeModal">
+        <div class="w-full max-w-xl animate-float-in border border-line/70 bg-ink shadow-soft">
+          <div class="flex items-center justify-between border-b border-line/70 px-6 py-4">
+            <h2 class="text-lg font-semibold">{{ editingForm ? 'Edit Form' : 'New Form' }}</h2>
+            <button class="flex h-8 w-8 items-center justify-center text-slate-400 transition hover:bg-panel hover:text-white" @click="closeModal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
           </div>
           <form @submit.prevent="saveForm">
-            <div class="modal-body">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Slug</label>
-                  <input type="text" v-model="formData.slug" required placeholder="my-form" :disabled="editingForm">
-                  <div class="hint">Lowercase, numbers, hyphens only</div>
+            <div class="space-y-5 px-6 py-6">
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Slug</label>
+                  <input type="text" v-model="formData.slug" required placeholder="my-form" :disabled="editingForm" class="mt-2 w-full border border-line bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 caret-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-60">
+                  <div class="mt-2 text-xs text-slate-500">Lowercase, numbers, hyphens only</div>
                 </div>
-                <div class="form-group">
-                  <label>Name</label>
-                  <input type="text" v-model="formData.name" required placeholder="My Contact Form">
+                <div>
+                  <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Name</label>
+                  <input type="text" v-model="formData.name" required placeholder="My Contact Form" class="mt-2 w-full border border-line bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 caret-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40">
                 </div>
               </div>
-              <div class="form-group">
-                <label>Notification Email</label>
-                <input type="email" v-model="formData.notifyEmail" placeholder="team@example.com">
-                <div class="hint">Receive email on new submissions</div>
+              <div>
+                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Notification Email</label>
+                <input type="email" v-model="formData.notifyEmail" placeholder="team@example.com" class="mt-2 w-full border border-line bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 caret-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40">
+                <div class="mt-2 text-xs text-slate-500">Receive email on new submissions</div>
               </div>
-              <div class="form-group">
-                <label>Redirect URL</label>
-                <input type="url" v-model="formData.redirectUrl" placeholder="https://example.com/thank-you">
-                <div class="hint">Redirect after HTML form submission</div>
+              <div>
+                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Redirect URL</label>
+                <input type="url" v-model="formData.redirectUrl" placeholder="https://example.com/thank-you" class="mt-2 w-full border border-line bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 caret-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40">
+                <div class="mt-2 text-xs text-slate-500">Redirect after HTML form submission</div>
               </div>
-              <div class="form-group">
-                <label>Allowed Origins</label>
-                <input type="text" v-model="formData.allowedOrigins" placeholder="https://example.com, https://app.example.com">
-                <div class="hint">Comma-separated domains (leave empty to allow all)</div>
+              <div>
+                <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Allowed Origins</label>
+                <input type="text" v-model="formData.allowedOrigins" placeholder="https://example.com, https://app.example.com" class="mt-2 w-full border border-line bg-slate-800 px-4 py-2.5 text-sm text-white placeholder-slate-500 caret-white focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40">
+                <div class="mt-2 text-xs text-slate-500">Comma-separated domains (leave empty to allow all)</div>
               </div>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
-              <button type="submit" class="btn btn-primary" :disabled="saving">{{ saving ? 'Saving...' : 'Save Form' }}</button>
+            <div class="flex items-center justify-end gap-3 border-t border-line/70 px-6 py-4">
+              <button type="button" class="border border-line/70 bg-panelStrong/70 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white" @click="closeModal">Cancel</button>
+              <button type="submit" class="bg-accent px-4 py-2 text-sm font-semibold text-ink shadow-soft transition hover:bg-accentSoft disabled:opacity-60" :disabled="saving">{{ saving ? 'Saving...' : 'Save Form' }}</button>
             </div>
           </form>
         </div>
@@ -435,29 +485,64 @@ app.get('/admin', requireAuth, (req, res) => {
     </teleport>
 
     <teleport to="body">
-      <div v-if="showSubmissions" class="modal-overlay" @click.self="closeSubmissions">
-        <div class="modal submissions-modal">
-          <div class="modal-header">
-            <h2>Submissions: {{ selectedForm?.name }}</h2>
-            <button class="close-btn" @click="closeSubmissions">&times;</button>
+      <div v-if="showSubmissions" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" @click.self="closeSubmissions">
+        <div class="w-full max-w-4xl animate-float-in border border-line/70 bg-ink shadow-soft">
+          <div class="flex items-center justify-between border-b border-line/70 px-6 py-4">
+            <div>
+              <h2 class="text-lg font-semibold">{{ selectedForm?.name }}</h2>
+              <div class="text-xs text-slate-400">{{ submissions.length }} submission{{ submissions.length !== 1 ? 's' : '' }}</div>
+            </div>
+            <button class="flex h-8 w-8 items-center justify-center text-slate-400 transition hover:bg-panel hover:text-white" @click="closeSubmissions">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
           </div>
-          <div v-if="submissions.length === 0" class="submissions-empty">No submissions yet</div>
-          <table v-else>
-            <thead>
-              <tr>
-                <th style="width:160px">Date</th>
-                <th>Data</th>
-                <th style="width:100px">IP</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="sub in submissions" :key="sub.id">
-                <td>{{ formatDate(sub.createdAt) }}</td>
-                <td><div class="data-json">{{ JSON.stringify(sub.data, null, 2) }}</div></td>
-                <td>{{ sub.ip || '-' }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div v-if="submissions.length === 0" class="px-6 py-16 text-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-slate-600"><polyline points="22,12 16,12 14,15 10,15 8,12 2,12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+            <p class="mt-3 text-sm text-slate-400">No submissions yet</p>
+          </div>
+          <div v-else class="max-h-[70vh] overflow-y-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="sticky top-0 bg-panelStrong text-xs uppercase tracking-[0.3em] text-slate-400">
+                <tr>
+                  <th class="px-5 py-3 font-semibold">Date</th>
+                  <th class="px-5 py-3 font-semibold">Data</th>
+                  <th class="px-5 py-3 font-semibold">IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="sub in submissions" :key="sub.id" class="border-b border-line/60">
+                  <td class="whitespace-nowrap px-5 py-3 align-top text-xs text-slate-400">{{ formatDate(sub.createdAt) }}</td>
+                  <td class="px-5 py-3">
+                    <div class="space-y-1">
+                      <div v-for="(val, key) in sub.data" :key="key" class="flex items-baseline gap-2 text-sm">
+                        <span class="shrink-0 font-mono text-xs text-slate-500">{{ key }}</span>
+                        <span class="text-slate-200">{{ typeof val === 'object' ? JSON.stringify(val) : val }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="whitespace-nowrap px-5 py-3 align-top font-mono text-xs text-slate-400">{{ sub.ip || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </teleport>
+
+    <teleport to="body">
+      <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" @click.self="cancelDelete">
+        <div class="w-full max-w-sm animate-float-in border border-line/70 bg-ink shadow-soft">
+          <div class="px-6 py-6 text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center bg-danger/15">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold">Delete form</h3>
+            <p class="mt-2 text-sm text-slate-400">Delete <span class="font-semibold text-slate-200">"{{ formToDelete?.name }}"</span> and all its submissions? This cannot be undone.</p>
+          </div>
+          <div class="flex gap-3 border-t border-line/70 px-6 py-4">
+            <button class="flex-1 border border-line/70 bg-panelStrong/70 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white" @click="cancelDelete">Cancel</button>
+            <button class="flex-1 bg-danger px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-rose-400" @click="confirmDelete">Delete</button>
+          </div>
         </div>
       </div>
     </teleport>
@@ -476,6 +561,8 @@ app.get('/admin', requireAuth, (req, res) => {
         const submissions = ref([]);
         const saving = ref(false);
         const formData = ref({ slug: '', name: '', notifyEmail: '', redirectUrl: '', allowedOrigins: '' });
+        const showDeleteConfirm = ref(false);
+        const formToDelete = ref(null);
 
         const totalSubmissions = computed(() => forms.value.reduce((sum, f) => sum + f.submissionCount, 0));
 
@@ -517,14 +604,35 @@ app.get('/admin', requireAuth, (req, res) => {
           saving.value = false;
         };
 
-        const deleteForm = async (form) => {
-          if (!confirm('Delete "' + form.name + '" and all submissions?')) return;
+        const deleteForm = (form) => {
+          formToDelete.value = form;
+          showDeleteConfirm.value = true;
+        };
+
+        const confirmDelete = async () => {
+          const form = formToDelete.value;
+          showDeleteConfirm.value = false;
+          formToDelete.value = null;
+          if (!form) return;
           try {
             const res = await fetch('/admin/api/forms/' + form.slug, { method: 'DELETE' });
             if (res.status === 401) return window.location.href = '/admin/login';
             if (res.ok) { showAlert('Form deleted'); loadForms(); }
             else showAlert('Failed to delete', 'error');
           } catch (e) { showAlert('Network error', 'error'); }
+        };
+
+        const cancelDelete = () => {
+          showDeleteConfirm.value = false;
+          formToDelete.value = null;
+        };
+
+        const copyEndpoint = async (slug) => {
+          const url = window.location.origin + '/api/f/' + slug;
+          try {
+            await navigator.clipboard.writeText(url);
+            showAlert('Endpoint URL copied');
+          } catch (e) { showAlert('Failed to copy', 'error'); }
         };
 
         const viewSubmissions = async (form) => {
@@ -540,9 +648,18 @@ app.get('/admin', requireAuth, (req, res) => {
         const closeSubmissions = () => { showSubmissions.value = false; selectedForm.value = null; };
         const formatDate = (date) => new Date(date).toLocaleString();
 
-        onMounted(loadForms);
+        onMounted(() => {
+          loadForms();
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+              if (showDeleteConfirm.value) cancelDelete();
+              else if (showSubmissions.value) closeSubmissions();
+              else if (showModal.value) closeModal();
+            }
+          });
+        });
 
-        return { forms, alert, showModal, showSubmissions, editingForm, selectedForm, submissions, saving, formData, totalSubmissions, showAlert, openModal, closeModal, saveForm, deleteForm, viewSubmissions, closeSubmissions, formatDate };
+        return { forms, alert, showModal, showSubmissions, editingForm, selectedForm, submissions, saving, formData, showDeleteConfirm, formToDelete, totalSubmissions, showAlert, openModal, closeModal, saveForm, deleteForm, confirmDelete, cancelDelete, copyEndpoint, viewSubmissions, closeSubmissions, formatDate };
       }
     }).mount('#app');
   </script>

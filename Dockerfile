@@ -13,8 +13,8 @@ COPY src ./src
 RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=3000
 
-EXPOSE 3001
+EXPOSE 3000
 
 CMD ["node", "src/index.js"]

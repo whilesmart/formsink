@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "lint": "node --check src/index.js src/db.js",
+    "test": "node -e \"console.log(\\\"No tests specified\\\")\""
   },
   "keywords": [
     "forms",
