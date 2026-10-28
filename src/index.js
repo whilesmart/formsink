@@ -15,6 +15,8 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 
+const protectedForms = new Set((process.env.TURNSTILE_REQUIRED_FORMS || 'contact,request-demo').split(',').map(value => value.trim()).filter(Boolean));
+const turnstileHostnames = (process.env.TURNSTILE_HOSTNAMES || '').split(',').map(value => value.trim()).filter(Boolean);
 const sessions = new Map();
 
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -74,36 +76,54 @@ if (process.env.SMTP_HOST) {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_SECURE === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+    connectionTimeout: 10000,
+    socketTimeout: 15000,
   });
 }
 
-async function sendNotification(toEmail, formName, data, submittedAt) {
-  if (!transporter || !toEmail) return;
-  const entries = Object.entries(data).filter(([key]) => !key.startsWith('_'));
-  const formattedData = entries.map(([k, v]) => `${k}: ${v}`).join('\n');
-  try {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@formsink.local',
-      to: toEmail,
-      subject: `New submission: ${formName}`,
-      text: `New form submission:\n\n${formattedData}\n\nSubmitted: ${submittedAt}`,
-      html: `
-        <h2>New submission: ${formName}</h2>
-        <table style="border-collapse:collapse;width:100%">
-          ${entries.map(([k, v]) => `
-            <tr>
-              <td style="border:1px solid #ddd;padding:8px;font-weight:bold">${k}</td>
-              <td style="border:1px solid #ddd;padding:8px">${v}</td>
-            </tr>
-          `).join('')}
-        </table>
-        <p style="color:#666;margin-top:16px">Submitted: ${submittedAt}</p>
-      `,
-    });
-  } catch (err) {
-    console.error('Email failed:', err.message);
+async function sendNotification(toEmail, formName, data, submittedAt, required) {
+  const recipients = [...new Set([toEmail, required ? process.env.NOTIFICATION_COPY_TO : null]
+    .filter(Boolean).flatMap(value => value.split(',')).map(value => value.trim()).filter(Boolean))];
+  if (!transporter || !recipients.length) {
+    if (required) throw new Error('Notification delivery is not configured');
+    return;
   }
+  const entries = Object.entries(data).filter(([key]) => !key.startsWith('_'));
+  const info = await transporter.sendMail({
+    from: process.env.SMTP_FROM || 'noreply@formsink.local',
+    to: recipients,
+    replyTo: typeof data.email === 'string' ? data.email : undefined,
+    subject: `New submission: ${formName}`,
+    text: `New form submission:\n\n${entries.map(([key, value]) => `${key}: ${value}`).join('\n')}\n\nSubmitted: ${submittedAt}`,
+  });
+  if (info.rejected?.length) throw new Error('A notification recipient was rejected');
+}
+
+async function validateChallenge(req) {
+  if (!process.env.TURNSTILE_SECRET_KEY || !turnstileHostnames.length || !process.env.NOTIFICATION_COPY_TO || !transporter) {
+    return { status: 503, error: 'The form is temporarily unavailable. Please email our team.' };
+  }
+  const token = req.body['cf-turnstile-response'];
+  if (typeof token !== 'string' || !token || token.length > 2048) {
+    return { status: 400, error: 'Please complete the security check.' };
+  }
+  try {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: process.env.TURNSTILE_SECRET_KEY, response: token }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error('Challenge service unavailable');
+    const result = await response.json();
+    if (result.success !== true || !turnstileHostnames.includes(result.hostname) || result.action !== req.params.slug) {
+      return { status: 400, error: 'The security check expired or failed. Please try again.' };
+    }
+  } catch {
+    return { status: 503, error: 'The security check is temporarily unavailable. Please try again.' };
+  }
+  return null;
 }
 
 // ============ AUTH ROUTES ============
@@ -740,9 +760,27 @@ app.post('/api/f/:slug', async (req, res) => {
     return res.status(403).json({ error: 'Origin not allowed' });
   }
 
+  const protectedForm = protectedForms.has(req.params.slug);
+  if (protectedForm) {
+    const requiredFields = req.params.slug === 'request-demo' ? ['name', 'email', 'company'] : ['name', 'email', 'subject', 'message'];
+    if (requiredFields.some(key => typeof req.body[key] !== 'string' || !req.body[key].trim()) ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email) ||
+        Object.values(req.body).some(value => typeof value !== 'string' || value.length > 10000)) {
+      return res.status(422).json({ error: 'Please complete the required fields with a valid email address.' });
+    }
+    const challengeError = await validateChallenge(req);
+    if (challengeError) return res.status(challengeError.status).json({ error: challengeError.error });
+  }
+  const data = { ...req.body };
+  delete data['cf-turnstile-response'];
   const id = uuidv4();
-  const submission = submissions.create({ id, formSlug: req.params.slug, data: req.body, ip: req.ip, userAgent: req.get('user-agent') });
-  await sendNotification(form.notifyEmail, form.name, req.body, submission.createdAt);
+  const submission = submissions.create({ id, formSlug: req.params.slug, data, ip: req.ip, userAgent: req.get('user-agent') });
+  try {
+    await sendNotification(form.notifyEmail, form.name, data, submission.createdAt, protectedForm);
+  } catch {
+    console.error('Notification delivery failed for submission', id);
+    return res.status(502).json({ error: 'Your message was saved, but the email notification could not be delivered. Please email our team directly.', id });
+  }
 
   if (form.redirectUrl && req.get('content-type')?.includes('application/x-www-form-urlencoded')) {
     return res.redirect(form.redirectUrl);
