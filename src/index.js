@@ -97,7 +97,8 @@ async function sendNotification(toEmail, formName, data, submittedAt, required) 
     subject: `New submission: ${formName}`,
     text: `New form submission:\n\n${entries.map(([key, value]) => `${key}: ${value}`).join('\n')}\n\nSubmitted: ${submittedAt}`,
   });
-  if (info.rejected?.length) throw new Error('A notification recipient was rejected');
+  if (!info.accepted?.length) throw new Error('Notification delivery failed');
+  if (info.rejected?.length) console.error('Notification recipients rejected:', info.rejected.length);
 }
 
 async function validateChallenge(req) {
@@ -760,18 +761,23 @@ app.post('/api/f/:slug', async (req, res) => {
     return res.status(403).json({ error: 'Origin not allowed' });
   }
 
+  const body = req.body ?? {};
   const protectedForm = protectedForms.has(req.params.slug);
   if (protectedForm) {
-    const requiredFields = req.params.slug === 'request-demo' ? ['name', 'email', 'company'] : ['name', 'email', 'subject', 'message'];
-    if (requiredFields.some(key => typeof req.body[key] !== 'string' || !req.body[key].trim()) ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email) ||
-        Object.values(req.body).some(value => typeof value !== 'string' || value.length > 10000)) {
+    const requiredFields = new Map([
+      ['request-demo', ['name', 'email', 'company']],
+      ['contact', ['name', 'email', 'subject', 'message']],
+    ]).get(req.params.slug) || [];
+    if (typeof body !== 'object' || Array.isArray(body) || !Object.keys(body).length ||
+        requiredFields.some(key => typeof body[key] !== 'string' || !body[key].trim()) ||
+        ('email' in body && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) ||
+        Object.values(body).some(value => typeof value !== 'string' || value.length > 10000)) {
       return res.status(422).json({ error: 'Please complete the required fields with a valid email address.' });
     }
     const challengeError = await validateChallenge(req);
     if (challengeError) return res.status(challengeError.status).json({ error: challengeError.error });
   }
-  const data = { ...req.body };
+  const data = { ...body };
   delete data['cf-turnstile-response'];
   const id = uuidv4();
   const submission = submissions.create({ id, formSlug: req.params.slug, data, ip: req.ip, userAgent: req.get('user-agent') });

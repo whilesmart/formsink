@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:net';
 import { spawn } from 'node:child_process';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -70,4 +71,66 @@ test('SMTP failure preserves the submission without reporting success',async()=>
   const response=await submit('test',data);assert.equal(response.status,502);
   assert.match((await response.json()).error,/saved/);assert.equal((await stored()).length,1);
  });
+});
+
+test('Missing and unsupported bodies return validation errors', async () => {
+  await runServer({}, async () => {
+    for (const options of [{}, {headers: {'Content-Type': 'text/plain'}, body: 'hello'}, {body: new FormData()}]) {
+      const response = await fetch(base + '/api/f/contact', {method: 'POST', ...options});
+      assert.equal(response.status, 422);
+    }
+    assert.deepEqual(await stored(), []);
+  });
+});
+
+test('Custom protected forms do not inherit contact fields', async () => {
+  await runServer({}, async () => {
+    const response = await submit('test', {email: data.email, 'cf-turnstile-response': data['cf-turnstile-response']});
+    assert.equal(response.status, 201);
+    assert.equal((await stored()).length, 1);
+    assert.equal((await submit('contact', {email: data.email})).status, 422);
+    assert.equal((await submit('request-demo', {name: data.name, email: data.email})).status, 422);
+  });
+});
+
+test('Partial SMTP acceptance does not ask the sender to submit again', async () => {
+  const messages = [];
+  const smtp = createServer(socket => {
+    let buffer = '';
+    let inData = false;
+    let message = '';
+    socket.write('220 localhost ESMTP\r\n');
+    socket.on('data', chunk => {
+      buffer += chunk;
+      let end;
+      while ((end = buffer.indexOf('\r\n')) >= 0) {
+        const line = buffer.slice(0, end);
+        buffer = buffer.slice(end + 2);
+        if (inData) {
+          if (line === '.') {
+            messages.push(message);
+            inData = false;
+            socket.write('250 Message accepted\r\n');
+          } else message += line + '\r\n';
+        } else if (/^EHLO|^HELO/.test(line)) socket.write('250 localhost\r\n');
+        else if (/^RCPT TO:.*support@credflare.net/i.test(line)) socket.write('550 Recipient unavailable\r\n');
+        else if (line === 'DATA') { inData = true; socket.write('354 End with dot\r\n'); }
+        else if (line === 'QUIT') socket.end('221 Goodbye\r\n');
+        else socket.write('250 OK\r\n');
+      }
+    });
+  });
+  await new Promise(resolve => smtp.listen(0, '127.0.0.1', resolve));
+  try {
+    await runServer({SMTP_HOST: '127.0.0.1', SMTP_PORT: String(smtp.address().port)}, async () => {
+      const response = await submit('test', data);
+      assert.equal(response.status, 201);
+      assert.equal((await response.json()).success, true);
+      assert.equal((await stored()).length, 1);
+      assert.equal(messages.length, 1);
+      assert.match(messages[0], /business verification walkthrough/);
+    });
+  } finally {
+    await new Promise(resolve => smtp.close(resolve));
+  }
 });
