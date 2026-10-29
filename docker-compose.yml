@@ -18,8 +18,13 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM=${SMTP_FROM}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - TURNSTILE_REQUIRED_FORMS=${TURNSTILE_REQUIRED_FORMS:-contact,request-demo}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY}
+      - TURNSTILE_HOSTNAMES=${TURNSTILE_HOSTNAMES:-credflare.net,www.credflare.net}
+      - NOTIFICATION_COPY_TO=${NOTIFICATION_COPY_TO:-folks@whilesmart.com}
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
